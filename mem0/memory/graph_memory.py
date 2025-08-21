@@ -51,7 +51,7 @@ class MemoryGraph:
 
         # ⚠️ Conservamos tu personalización: una única etiqueta para todos los nodos
         #     (antes "__Entity__" en mem0; tú usas "Entity")
-        self.node_label = ":`Entity`" if base_label else ""
+        self.node_label = ":Entity"
 
         if base_label:
             # Índices seguros (no fallan si existen o en Community)
@@ -398,7 +398,7 @@ class MemoryGraph:
 
             result = self.graph.query(cypher, params=params)
             results.append(result)
-
+        self._prune_orphans(filters)
         return results
 
     def _add_entities(self, to_be_added, filters, entity_type_map):
@@ -417,10 +417,14 @@ class MemoryGraph:
             destination_type = entity_type_map.get(destination, "__User__")
 
             # Con base_label=True usamos la etiqueta común; si no, caemos a etiquetas por tipo
-            source_label = self.node_label if self.node_label else f":`{source_type}`"
-            destination_label = self.node_label if self.node_label else f":`{destination_type}`"
-            source_extra_set = f", source:`{source_type}`" if self.node_label else ""
-            destination_extra_set = f", destination:`{destination_type}`" if self.node_label else ""
+            source_label = self.node_label #Forzar solo Entity label
+            #if self.node_label else f":`{source_type}`"
+            destination_label = self.node_label #Forzar solo Entity label
+            #if self.node_label else f":`{destination_type}`"
+            source_extra_set = "" 
+            #f", source:`{source_type}`" if self.node_label else ""
+            destination_extra_set = "" 
+            #f", destination:`{destination_type}`" if self.node_label else ""
 
             source_embedding = self.embedding_model.embed(source)
             dest_embedding = self.embedding_model.embed(destination)
@@ -591,6 +595,7 @@ class MemoryGraph:
 
             result = self.graph.query(cypher, params=params)
             results.append(result)
+        self._prune_orphans(filters)
         return results
 
     def _remove_spaces_from_entities(self, entity_list):
@@ -672,3 +677,12 @@ class MemoryGraph:
         logger.warning("Clearing graph...")
         cypher_query = "MATCH (n) DETACH DELETE n"
         return self.graph.query(cypher_query)
+
+    def _prune_orphans(self, filters):
+        """Elimina nodos :Entity sin aristas para ese user_id (limpieza segura: jamás creamos nodos sin relación)."""
+        cypher = f"""
+        MATCH (n {self.node_label} {{user_id:$user_id}})
+        WHERE NOT (n)--()
+        DETACH DELETE n
+        """
+        self.graph.query(cypher, params={"user_id": filters["user_id"]})
