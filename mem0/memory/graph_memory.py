@@ -243,7 +243,7 @@ class MemoryGraph:
             user_identity += f", run_id: {filters['run_id']}"
 
         if getattr(self.config.graph_store, "custom_prompt", None):
-            system_content = EXTRACT_RELATIONS_PROMPT.replace("USER_ID", user_identity)
+            system_content = EXTRACT_RELATIONS_PROMPT.replace("USER_ID", filters["user_id"])
             system_content = system_content.replace("CUSTOM_PROMPT", f"4. {self.config.graph_store.custom_prompt}")
             messages = [
                 {"role": "system", "content": system_content},
@@ -333,7 +333,7 @@ class MemoryGraph:
         if filters.get("run_id"):
             user_identity += f", run_id: {filters['run_id']}"
 
-        system_prompt, user_prompt = get_delete_messages(search_output_string, data, user_identity)
+        system_prompt, user_prompt = get_delete_messages(search_output_string, data, filters["user_id"])
 
         _tools = [DELETE_MEMORY_TOOL_GRAPH]
         if self.llm_provider in ["azure_openai_structured", "openai_structured"]:
