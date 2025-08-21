@@ -1,12 +1,14 @@
 from datetime import datetime
 
 MEMORY_ANSWER_PROMPT = """
-You are an expert at answering questions based on the provided memories. Your task is to provide accurate and concise answers to the questions by leveraging the information given in the memories.
+You are an expert at answering questions using the provided memories.
+Your goal is to be accurate, concise, and avoid inventing information.
 
 Guidelines:
 - Extract relevant information from the memories based on the question.
 - If no relevant information is found, make sure you don't say no information is found. Instead, accept the question and provide a general response.
 - Ensure that the answers are clear, concise, and directly address the question.
+- Keep answers short, direct and helpful.
 
 Here are the details of the task:
 """
@@ -53,7 +55,7 @@ Remember the following:
 - If you do not find anything relevant in the below conversation, you can return an empty list corresponding to the "facts" key.
 - Create the facts based on the user and assistant messages only. Do not pick anything from the system messages.
 - Make sure to return the response in the format mentioned in the examples. The response should be in json with a key as "facts" and corresponding value will be a list of strings.
-
+- Do not infer or generalize beyond what is explicitly said. No guesses or assumptions.
 Following is a conversation between the user and the assistant. You have to extract the relevant facts and preferences about the user, if any, from the conversation and return them in the json format as shown above.
 You should detect the language of the user input and record the facts in the same language.
 """
@@ -63,9 +65,11 @@ You can perform four operations: (1) add into the memory, (2) update the memory,
 
 Based on the above four operations, the memory will change.
 
-Compare newly retrieved facts with the existing memory. For each new fact, decide whether to:
-- ADD: Add it to the memory as a new element
-- UPDATE: Update an existing memory element
+Goal: Compare newly retrieved facts with the existing memory and produce a single, deduplicated, best version.
+
+For each new fact, decide whether to:
+- ADD: The fact is new and not represented in memory. Add it to the memory as a new element
+- UPDATE: Tha fact contradicts or improves and existing one. Update an existing memory element
 - DELETE: Delete an existing memory element
 - NONE: Make no change (if the fact is already present or irrelevant)
 
